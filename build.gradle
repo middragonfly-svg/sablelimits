@@ -1,0 +1,65 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.middragonfly'
+version = project.mod_version
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+def serverDir = file(providers.gradleProperty('serverDir').getOrElse('../veritascreate'))
+def libsDir = file('libs')
+
+def serverLibs = fileTree(dir: new File(serverDir, 'libraries'), include: '**/*.jar', exclude: [
+        'net/minecraft/server/1.21.1/server-1.21.1.jar',
+        'net/minecraft/server/**/*-extra.jar',
+        'net/minecraft/server/**/*-slim.jar',
+        'net/minecraft/server/**/*-unpacked.jar',
+        'net/minecraft/client/**'
+])
+
+// Must come first: the NeoForge-patched classes (e.g. SavedData.Factory) override the vanilla ones.
+def neoforgeServerJars = fileTree(dir: new File(serverDir, 'libraries/net/neoforged/neoforge'),
+        include: '**/neoforge-*-server.jar')
+
+dependencies {
+    compileOnly neoforgeServerJars
+    // NeoForge, patched Minecraft classes and every runtime library.
+    // The plain vanilla/obfuscated server jars are excluded: only the NeoForge-patched
+    // server jar and the Mojang-mapped srg jar may be on the compile classpath.
+    compileOnly serverLibs
+    // Sable, Create, Simulated and their compile-time companions.
+    compileOnly fileTree(dir: libsDir, include: '*.jar')
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.incremental = true
+}
+
+tasks.named('processResources', ProcessResources) {
+    filteringCharset = 'UTF-8'
+    inputs.property 'version', project.version
+    filesMatching('META-INF/neoforge.mods.toml') {
+        expand 'version': project.version
+    }
+}
+
+jar {
+    archiveBaseName = 'sablelimits'
+    archiveClassifier = ''
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    manifest {
+        attributes([
+            'Specification-Title'     : 'sablelimits',
+            'Specification-Vendor'    : 'middragonfly',
+            'Specification-Version'   : '1',
+            'Implementation-Title'    : 'sablelimits',
+            'Implementation-Version'  : project.version,
+            'Implementation-Vendor'   : 'middragonfly'
+        ])
+    }
+}

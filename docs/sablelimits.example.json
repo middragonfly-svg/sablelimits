@@ -1,0 +1,57 @@
+{
+  "_readme": [
+    "sablelimits — серверные лимиты блоков для Sable / Create: Aeronautics и обычных Create-контрапшенов.",
+    "Ключи в limits:",
+    "  create:deployer          — лимит на структурах Sable (без префикса)",
+    "  C create:deployer        — лимит только для обычных Create Contraptions",
+    "  * create:deployer        — лимит и для Sable, и для Create",
+    "  #create:seats            — лимит по тегу блока",
+    "  group:engines            — лимит по группе из секции groups",
+    "Значение 0 или меньше отключает конкретное правило.",
+    "defaultMaxBlocks — общий лимит блоков на Sable-структуру (0 = без лимита).",
+    "cacheExpirationDays — сколько дней хранить запись кэша (0 = никогда не удалять).",
+    "assemblyUsesPlayerLimit — при сборке учитывать личный limit.size ближайшего игрока (иначе только defaultMaxBlocks).",
+    "Права: sablelimits.bypass.blocks, sablelimits.bypass.size, мета sablelimits.limit.size."
+  ],
+  "enabled": true,
+  "cacheExpirationDays": 14,
+  "cleanupIntervalHours": 24,
+  "defaultMaxBlocks": 3500,
+  "assemblyActorRadius": 32,
+  "messageCooldownTicks": 20,
+  "assemblyUsesPlayerLimit": false,
+  "limits": {
+    "create:deployer": 16,
+    "C create:deployer": 32,
+    "#create:seats": 16,
+    "* create:mechanical_drill": 64,
+    "group:engines": 16
+  },
+  "groups": {
+    "engines": [
+      "simulated:white_portable_engine",
+      "simulated:orange_portable_engine",
+      "simulated:magenta_portable_engine",
+      "simulated:light_blue_portable_engine",
+      "simulated:yellow_portable_engine",
+      "simulated:lime_portable_engine",
+      "simulated:pink_portable_engine",
+      "simulated:gray_portable_engine",
+      "simulated:light_gray_portable_engine",
+      "simulated:cyan_portable_engine",
+      "simulated:purple_portable_engine",
+      "simulated:blue_portable_engine",
+      "simulated:brown_portable_engine",
+      "simulated:green_portable_engine",
+      "simulated:red_portable_engine",
+      "simulated:black_portable_engine"
+    ]
+  },
+  "messages": {
+    "blockLimit": "&cЛимит: &f%block% &7(%current%/%limit%)",
+    "sizeLimit": "&cЛимит размера корабля: &f%current%/%limit% &7блоков",
+    "assemblyBlockLimit": "&cСборка отменена: &f%block% &7(%current%/%limit%)",
+    "assemblySizeLimit": "&cСборка отменена: &f%current%&7/&f%limit% &7блоков (максимум)",
+    "reloaded": "&aSableLimits: конфиг перезагружен, правил: &f%rules%&a."
+  }
+}

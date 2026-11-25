@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.middragonfly.sablelimits.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "server": [
+    "BlockItemPlaceMixin",
+    "LevelChunkSetBlockMixin",
+    "ContraptionAssemblyMixin",
+    "SableAssemblyMixin",
+    "SimulatedAssemblyMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
