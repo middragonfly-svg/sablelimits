@@ -34,6 +34,8 @@
 | `forbiddenBlocks`: сборка Sable с запрещённым slime отменяется | PASS |
 | `forbiddenBlocks`: сборка Create с `C`-запретом отменяется | PASS |
 | `forbiddenBlocks`: правило без префикса не мешает Create | PASS |
+| `forbiddenBlocks`: бедрок (`* minecraft:bedrock`) не ставится на Sable-корабль | PASS |
+| Автообновление старого конфига: добавлены `forbiddenBlocks` с бедроком, `configVersion`, `assemblyUsesPlayerLimit`, `messages.forbiddenBlock` | PASS |
 | Кэш переживает рестарт: 3 записи загружены из `world/data/sablelimits.dat` | PASS |
 | Выгрузка структуры (`UNLOADED`) не удаляет кэш | PASS |
 | Конфиг и сообщения в UTF-8 | PASS |
@@ -57,7 +59,8 @@ sableUnaffectedByCreateForbidden=CONSUME;
 forbiddenAssembly=true;
 createForbidden=true;
 createUnaffectedBySableForbidden=true;
-cache entries=2
+bedrockPlace=FAIL;
+cache entries=5
 ```
 
 После `stop` / запуска сервера:
@@ -79,6 +82,8 @@ cache entries=2
 5. **Групповой лимит**: 10 + 6 из группы проходят, 17-й блок блокируется.
 6. **`forbiddenBlocks`**: блок из списка нельзя поставить на борт и нельзя собрать
    с ним корабль/контрапшен; `C`-правило не мешает Sable, правило без префикса — Create.
+   По умолчанию проверяется `* minecraft:bedrock`; старый конфиг дополняется разделом
+   автоматически при старте/`reload`.
 7. **`C`-правила**: подшипник/вагонетка с превышением отменяются; корабль Sable
    этим правилом не затрагивается.
 8. **`*`-правила**: действуют на оба типа.

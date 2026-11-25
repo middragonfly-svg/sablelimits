@@ -32,9 +32,17 @@ public final class ConfigManager {
     public static SableLimitsConfig reload() throws IOException {
         synchronized (LOCK) {
             final Path path = configPath();
-            if (!Files.exists(path)) {
-                SableLimitsConfig.writeDefault(path);
-                SableLimits.LOGGER.info("Создан конфиг {}", path);
+            final boolean existed = Files.exists(path);
+            try {
+                if (SableLimitsConfig.ensureCurrentShape(path)) {
+                    SableLimits.LOGGER.info(existed
+                            ? "Конфиг обновлён до актуальной структуры: {}"
+                            : "Создан конфиг {}", path);
+                }
+            } catch (final IOException e) {
+                // A read-only config must not prevent the server from starting; loading below
+                // will surface the real parse error, if any.
+                SableLimits.LOGGER.warn("Не удалось обновить структуру конфига: {}", e.getMessage());
             }
 
             final SableLimitsConfig loaded = SableLimitsConfig.load(path);

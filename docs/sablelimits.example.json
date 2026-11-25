@@ -1,4 +1,5 @@
 {
+  "configVersion": 2,
   "_readme": [
     "sablelimits — серверные лимиты блоков для Sable / Create: Aeronautics и обычных Create-контрапшенов.",
     "Ключи в limits:",
@@ -49,7 +50,9 @@
       "simulated:black_portable_engine"
     ]
   },
-  "forbiddenBlocks": [],
+  "forbiddenBlocks": [
+    "* minecraft:bedrock"
+  ],
   "messages": {
     "blockLimit": "&cЛимит: &f%block% &7(%current%/%limit%)",
     "sizeLimit": "&cЛимит размера корабля: &f%current%/%limit% &7блоков",

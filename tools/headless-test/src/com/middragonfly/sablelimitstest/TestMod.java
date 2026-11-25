@@ -252,6 +252,14 @@ public final class TestMod {
         }
         out.append("createUnaffectedBySableForbidden=").append(createForbiddenScoped).append("; ");
 
+        // Bedrock specifically: a common "do not put this on a ship" block.
+        final BlockPos bedrockSupport = anchor.east(4);
+        final BlockPos bedrockPos = bedrockSupport.above();
+        level.setBlockAndUpdate(bedrockSupport, Blocks.STONE.defaultBlockState());
+        writeJson("{\"enabled\":true,\"forbiddenBlocks\":[\"* minecraft:bedrock\"],\"messages\":{}}");
+        ConfigManager.reload();
+        out.append("bedrockPlace=").append(place(level, bedrockPos, Items.BEDROCK)).append("; ");
+
         out.append("cache entries=").append(LimitManager.get() == null ? -1
                 : LimitManager.get().cachedStructures()).append("; done");
     }
@@ -268,8 +276,13 @@ public final class TestMod {
     }
 
     private static InteractionResult place(final ServerLevel level, final BlockPos pos) {
-        final TestContext context = new TestContext(level, pos);
-        return ((BlockItem) Items.HOPPER).place(context);
+        return place(level, pos, Items.HOPPER);
+    }
+
+    private static InteractionResult place(final ServerLevel level, final BlockPos pos,
+                                           final net.minecraft.world.item.Item item) {
+        final TestContext context = new TestContext(level, pos, item);
+        return ((BlockItem) item).place(context);
     }
 
     private static void writeConfig(final int hopperLimit, final int maxBlocks) throws Exception {
@@ -314,9 +327,9 @@ public final class TestMod {
     }
 
     private static final class TestContext extends BlockPlaceContext {
-        TestContext(final ServerLevel level, final BlockPos pos) {
+        TestContext(final ServerLevel level, final BlockPos pos, final net.minecraft.world.item.Item item) {
             super(level, new FakePlayer(level, new GameProfile(UUID.randomUUID(), "slstest")),
-                    InteractionHand.MAIN_HAND, new ItemStack(Items.HOPPER),
+                    InteractionHand.MAIN_HAND, new ItemStack(item),
                     new BlockHitResult(Vec3.atCenterOf(pos), Direction.UP, pos, false));
         }
     }

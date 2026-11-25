@@ -22,7 +22,7 @@ import java.util.Map;
  */
 public final class SableLimitsConfig {
 
-    public static final int CURRENT_VERSION = 1;
+    public static final int CURRENT_VERSION = 2;
 
     public final boolean enabled;
     public final int cacheExpirationDays;
@@ -83,7 +83,10 @@ public final class SableLimitsConfig {
     }
 
     public static SableLimitsConfig load(final Path path) throws IOException {
-        final String raw = Files.readString(path, StandardCharsets.UTF_8);
+        String raw = Files.readString(path, StandardCharsets.UTF_8);
+        if (!raw.isEmpty() && raw.charAt(0) == '\ufeff') {
+            raw = raw.substring(1);
+        }
         final JsonElement parsed;
         try {
             parsed = JsonParser.parseString(raw);
@@ -171,6 +174,7 @@ public final class SableLimitsConfig {
         }
 
         final JsonObject root = new JsonObject();
+        root.addProperty("configVersion", CURRENT_VERSION);
         final JsonArray readme = new JsonArray();
         readme.add("sablelimits — серверные лимиты блоков для Sable / Create: Aeronautics и обычных Create-контрапшенов.");
         readme.add("Ключи в limits:");
@@ -214,7 +218,7 @@ public final class SableLimitsConfig {
         groups.add("engines", engines);
         root.add("groups", groups);
 
-        root.add("forbiddenBlocks", new JsonArray());
+        root.add("forbiddenBlocks", forbiddenDefaults());
 
         final JsonObject messages = new JsonObject();
         messages.addProperty("blockLimit", "&cЛимит: &f%block% &7(%current%/%limit%)");
@@ -227,6 +231,77 @@ public final class SableLimitsConfig {
 
         final Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
         Files.writeString(path, gson.toJson(root) + System.lineSeparator(), StandardCharsets.UTF_8);
+    }
+
+    private static JsonArray forbiddenDefaults() {
+        final JsonArray forbidden = new JsonArray();
+        forbidden.add("* minecraft:bedrock");
+        return forbidden;
+    }
+
+    /**
+     * Updates an existing config file in place: adds sections introduced by newer mod versions
+     * without touching the values the server owner already set.
+     *
+     * @return true when the file was rewritten
+     */
+    public static boolean ensureCurrentShape(final Path path) throws IOException {
+        if (!Files.exists(path)) {
+            writeDefault(path);
+            return true;
+        }
+
+        String raw = Files.readString(path, StandardCharsets.UTF_8);
+        if (!raw.isEmpty() && raw.charAt(0) == '\ufeff') {
+            raw = raw.substring(1);
+        }
+
+        final JsonElement parsed;
+        try {
+            parsed = JsonParser.parseString(raw);
+        } catch (final RuntimeException e) {
+            throw new IOException("Некорректный JSON в " + path.getFileName()
+                    + " (проверьте запятые и кавычки): " + e.getMessage(), e);
+        }
+        if (!parsed.isJsonObject()) {
+            throw new IOException(path.getFileName() + ": корень файла должен быть JSON-объектом");
+        }
+
+        final JsonObject root = parsed.getAsJsonObject();
+        boolean changed = false;
+
+        if (!root.has("configVersion")) {
+            root.addProperty("configVersion", CURRENT_VERSION);
+            changed = true;
+        }
+        if (!root.has("assemblyUsesPlayerLimit")) {
+            root.addProperty("assemblyUsesPlayerLimit", false);
+            changed = true;
+        }
+        if (!root.has("forbiddenBlocks")) {
+            root.add("forbiddenBlocks", forbiddenDefaults());
+            changed = true;
+        }
+
+        JsonObject messages = null;
+        if (root.get("messages") != null && root.get("messages").isJsonObject()) {
+            messages = root.getAsJsonObject("messages");
+        }
+        if (messages == null) {
+            messages = new JsonObject();
+            root.add("messages", messages);
+            changed = true;
+        }
+        if (!messages.has("forbiddenBlock")) {
+            messages.addProperty("forbiddenBlock", "&cБлок запрещён на конструкции: &f%block%");
+            changed = true;
+        }
+
+        if (changed) {
+            final Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+            Files.writeString(path, gson.toJson(root) + System.lineSeparator(), StandardCharsets.UTF_8);
+        }
+        return changed;
     }
 
     private static boolean getBoolean(final JsonObject root, final String key, final boolean fallback, final List<String> warnings) {
