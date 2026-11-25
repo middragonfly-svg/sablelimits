@@ -19,7 +19,8 @@
 ```powershell
 $src = "$pwd\tools\headless-test"
 $out = "$pwd\build\headless-test"
-$libraries = "C:\моды\veritascreate\libraries"
+$serverDir = "C:\path\to\server"
+$libraries = "$serverDir\libraries"
 
 $jars = Get-ChildItem $libraries -Recurse -Filter *.jar | Where-Object {
     $_.FullName -notmatch 'net\\minecraft\\server\\1\.21\.1\\' -and
@@ -30,11 +31,9 @@ $cp = (($jars.FullName + (Get-ChildItem "$pwd\libs" -Filter *.jar).FullName +
         "$pwd\build\libs\sablelimits-1.0.0.jar") -join ';')
 
 New-Item -ItemType Directory -Force $out | Out-Null
-& "C:\Program Files\Eclipse Adoptium\jdk-21.0.3.9-hotspot\bin\javac.exe" `
-    -proc:none -encoding UTF-8 -cp $cp -d $out "$src\src\com\middragonfly\sablelimitstest\TestMod.java"
+javac -proc:none -encoding UTF-8 -cp $cp -d $out "$src\src\com\middragonfly\sablelimitstest\TestMod.java"
 Copy-Item "$src\resources\META-INF" $out -Recurse -Force
-& "C:\Program Files\Eclipse Adoptium\jdk-21.0.3.9-hotspot\bin\jar.exe" --create `
-    --file "$out\sablelimitstest.jar" -C $out .
+jar --create --file "$out\sablelimitstest.jar" -C $out .
 ```
 
 Положить `sablelimitstest.jar` в `mods` тестового сервера рядом с `sablelimits`.

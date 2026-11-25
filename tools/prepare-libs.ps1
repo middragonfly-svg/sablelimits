@@ -1,10 +1,10 @@
 # Populates ../libs with the jars needed to compile SableLimits.
 # The jars are not committed (see ../.gitignore).
 #
-#   powershell -ExecutionPolicy Bypass -File tools\prepare-libs.ps1 -ServerDir C:\mods\veritascreate
+#   powershell -ExecutionPolicy Bypass -File tools\prepare-libs.ps1 -ServerDir C:\path\to\server
 
 param(
-    [string]$ServerDir = (Join-Path $PSScriptRoot '..\..\veritascreate')
+    [string]$ServerDir = (Join-Path $PSScriptRoot '..\..\server')
 )
 
 $ErrorActionPreference = 'Stop'

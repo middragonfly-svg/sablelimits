@@ -1,7 +1,7 @@
 modLoader = "javafml"
 loaderVersion = "[4,)"
 license = "MIT"
-issueTrackerURL = "https://github.com/middragonfly-svg"
+issueTrackerURL = "https://github.com/middragonfly-svg/sablelimits/issues"
 
 [[mods]]
 modId = "sablelimits"

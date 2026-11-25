@@ -10,7 +10,7 @@ java {
     targetCompatibility = JavaVersion.VERSION_21
 }
 
-def serverDir = file(providers.gradleProperty('serverDir').getOrElse('../veritascreate'))
+def serverDir = file(providers.gradleProperty('serverDir').getOrElse('server'))
 def libsDir = file('libs')
 
 def serverLibs = fileTree(dir: new File(serverDir, 'libraries'), include: '**/*.jar', exclude: [

@@ -224,34 +224,6 @@ LuckPerms автоматически становится обработчико
   По умолчанию сборка ограничена `defaultMaxBlocks`; это сознательный выбор,
   чтобы не привязывать корабль к владельцу.
 
-## Сборка мода
-
-Нужны JDK 21 и папка тестового сервера с Sable/Create/Aeronautics.
-
-```
-libs/
-  sable-neoforge-1.21.1-2.0.6.jar
-  sable-companion-common-1.21.1-1.6.0.jar
-  veil-neoforge-1.21.1-4.3.2.jar
-  create-1.21.1-6.0.10.jar
-  simulated-neoforge-1.21.1-1.3.2.jar
-```
-
-Jar-файлы в `libs/` не коммитятся. Их можно разложить скриптом:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File tools\prepare-libs.ps1 -ServerDir C:\моды\veritascreate
-```
-
-Путь к серверу для classpath задаётся в `gradle.properties` (`serverDir`) или через
-`-PserverDir=...`. Сборка:
-
-```
-gradlew.bat build
-```
-
-Результат: `build/libs/sablelimits-1.0.0.jar`.
-
 ## Тестирование
 
 Скрипт и результаты headless-проверки — в `docs/TESTING.md`.

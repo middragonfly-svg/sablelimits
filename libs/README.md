@@ -12,5 +12,5 @@
 Автоматически:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools\prepare-libs.ps1 -ServerDir C:\моды\veritascreate
+powershell -ExecutionPolicy Bypass -File tools\prepare-libs.ps1 -ServerDir C:\path\to\server
 ```
