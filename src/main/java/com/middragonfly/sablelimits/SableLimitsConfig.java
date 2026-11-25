@@ -33,6 +33,7 @@ public final class SableLimitsConfig {
     public final boolean assemblyUsesPlayerLimit;
     public final Map<String, Integer> limits;
     public final Map<String, List<String>> groups;
+    public final List<String> forbiddenBlocks;
     public final Messages messages;
     public final RuleSet rules;
     public final List<String> warnings;
@@ -46,6 +47,7 @@ public final class SableLimitsConfig {
                               final boolean assemblyUsesPlayerLimit,
                               final Map<String, Integer> limits,
                               final Map<String, List<String>> groups,
+                              final List<String> forbiddenBlocks,
                               final Messages messages,
                               final List<String> warnings) {
         this.enabled = enabled;
@@ -57,8 +59,9 @@ public final class SableLimitsConfig {
         this.assemblyUsesPlayerLimit = assemblyUsesPlayerLimit;
         this.limits = Map.copyOf(limits);
         this.groups = Map.copyOf(groups);
+        this.forbiddenBlocks = List.copyOf(forbiddenBlocks);
         this.messages = messages;
-        this.rules = RuleSet.compile(this.limits, this.groups, warnings);
+        this.rules = RuleSet.compile(this.limits, this.groups, this.forbiddenBlocks, warnings);
         this.warnings = List.copyOf(warnings);
     }
 
@@ -73,6 +76,7 @@ public final class SableLimitsConfig {
                 false,
                 Map.of(),
                 Map.of(),
+                List.of(),
                 new Messages(),
                 new ArrayList<>()
         );
@@ -100,6 +104,7 @@ public final class SableLimitsConfig {
         final int assemblyActorRadius = getInt(root, "assemblyActorRadius", 32, 0, 128, warnings);
         final int messageCooldownTicks = getInt(root, "messageCooldownTicks", 20, 0, 20 * 60, warnings);
         final boolean assemblyUsesPlayerLimit = getBoolean(root, "assemblyUsesPlayerLimit", false, warnings);
+        final List<String> forbiddenBlocks = getStringList(root, "forbiddenBlocks", warnings);
 
         final Map<String, Integer> limits = new LinkedHashMap<>();
         final JsonObject limitsObject = getObject(root, "limits", warnings);
@@ -156,7 +161,7 @@ public final class SableLimitsConfig {
 
         return new SableLimitsConfig(enabled, cacheExpirationDays, cleanupIntervalHours,
                 defaultMaxBlocks, assemblyActorRadius, messageCooldownTicks, assemblyUsesPlayerLimit,
-                limits, groups, messages, warnings);
+                limits, groups, forbiddenBlocks, messages, warnings);
     }
 
     public static void writeDefault(final Path path) throws IOException {
@@ -175,6 +180,8 @@ public final class SableLimitsConfig {
         readme.add("  #create:seats            — лимит по тегу блока");
         readme.add("  group:engines            — лимит по группе из секции groups");
         readme.add("Значение 0 или меньше отключает конкретное правило.");
+        readme.add("forbiddenBlocks — блоки, с которыми сборка отменяется: ID, #тег или group:имя.");
+        readme.add("  в forbiddenBlocks те же префиксы: без префикса — Sable, C — Create, * — оба типа.");
         readme.add("defaultMaxBlocks — общий лимит блоков на Sable-структуру (0 = без лимита).");
         readme.add("cacheExpirationDays — сколько дней хранить запись кэша (0 = никогда не удалять).");
         readme.add("assemblyUsesPlayerLimit — при сборке учитывать личный limit.size ближайшего игрока (иначе только defaultMaxBlocks).");
@@ -207,11 +214,14 @@ public final class SableLimitsConfig {
         groups.add("engines", engines);
         root.add("groups", groups);
 
+        root.add("forbiddenBlocks", new JsonArray());
+
         final JsonObject messages = new JsonObject();
         messages.addProperty("blockLimit", "&cЛимит: &f%block% &7(%current%/%limit%)");
         messages.addProperty("sizeLimit", "&cЛимит размера корабля: &f%current%/%limit% &7блоков");
         messages.addProperty("assemblyBlockLimit", "&cСборка отменена: &f%block% &7(%current%/%limit%)");
         messages.addProperty("assemblySizeLimit", "&cСборка отменена: &f%current%&7/&f%limit% &7блоков (максимум)");
+        messages.addProperty("forbiddenBlock", "&cБлок запрещён на конструкции: &f%block%");
         messages.addProperty("reloaded", "&aSableLimits: конфиг перезагружен, правил: &f%rules%&a.");
         root.add("messages", messages);
 
@@ -262,11 +272,37 @@ public final class SableLimitsConfig {
         return element.getAsJsonObject();
     }
 
+    private static List<String> getStringList(final JsonObject root, final String key,
+                                              final List<String> warnings) {
+        final JsonElement element = root.get(key);
+        if (element == null) {
+            return List.of();
+        }
+        if (!element.isJsonArray()) {
+            warnings.add(key + ": ожидается массив строк, секция пропущена");
+            return List.of();
+        }
+
+        final List<String> values = new ArrayList<>();
+        for (final JsonElement value : element.getAsJsonArray()) {
+            if (value.isJsonPrimitive() && value.getAsJsonPrimitive().isString()) {
+                final String token = value.getAsString().trim();
+                if (!token.isEmpty()) {
+                    values.add(token);
+                }
+            } else {
+                warnings.add(key + ": элементы массива должны быть строками");
+            }
+        }
+        return values;
+    }
+
     public static final class Messages {
         public String blockLimit = "&cЛимит: &f%block% &7(%current%/%limit%)";
         public String sizeLimit = "&cЛимит размера корабля: &f%current%/%limit% &7блоков";
         public String assemblyBlockLimit = "&cСборка отменена: &f%block% &7(%current%/%limit%)";
         public String assemblySizeLimit = "&cСборка отменена: &f%current%&7/&f%limit% &7блоков (максимум)";
+        public String forbiddenBlock = "&cБлок запрещён на конструкции: &f%block%";
         public String reloaded = "&aSableLimits: конфиг перезагружен, правил: &f%rules%&a.";
 
         static Messages parse(final JsonObject root, final List<String> warnings) {
@@ -284,6 +320,7 @@ public final class SableLimitsConfig {
             messages.sizeLimit = getString(object, "sizeLimit", messages.sizeLimit, warnings);
             messages.assemblyBlockLimit = getString(object, "assemblyBlockLimit", messages.assemblyBlockLimit, warnings);
             messages.assemblySizeLimit = getString(object, "assemblySizeLimit", messages.assemblySizeLimit, warnings);
+            messages.forbiddenBlock = getString(object, "forbiddenBlock", messages.forbiddenBlock, warnings);
             messages.reloaded = getString(object, "reloaded", messages.reloaded, warnings);
             return messages;
         }

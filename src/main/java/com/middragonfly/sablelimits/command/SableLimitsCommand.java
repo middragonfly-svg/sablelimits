@@ -60,6 +60,8 @@ public final class SableLimitsCommand {
                         + ", TTL=" + config.cacheExpirationDays + "d"
                         + ", правил Sable=" + config.rules.sableRules.size()
                         + ", Create=" + config.rules.createRules.size()
+                        + ", запрещено блоков S=" + config.rules.forbiddenSable.size()
+                        + ", C=" + config.rules.forbiddenCreate.size()
                         + ", структур в кэше=" + cached), false);
         return 1;
     }

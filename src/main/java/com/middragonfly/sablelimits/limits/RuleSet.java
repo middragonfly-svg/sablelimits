@@ -32,21 +32,35 @@ public final class RuleSet {
 
     public final List<Rule> sableRules;
     public final List<Rule> createRules;
+    public final Set<Block> forbiddenSable;
+    public final Set<Block> forbiddenCreate;
 
-    private RuleSet(final List<Rule> sableRules, final List<Rule> createRules) {
+    private RuleSet(final List<Rule> sableRules, final List<Rule> createRules,
+                    final Set<Block> forbiddenSable, final Set<Block> forbiddenCreate) {
         this.sableRules = List.copyOf(sableRules);
         this.createRules = List.copyOf(createRules);
+        this.forbiddenSable = Set.copyOf(forbiddenSable);
+        this.forbiddenCreate = Set.copyOf(forbiddenCreate);
     }
 
     public static RuleSet empty() {
-        return new RuleSet(List.of(), List.of());
+        return new RuleSet(List.of(), List.of(), Set.of(), Set.of());
     }
 
     public static RuleSet compile(final Map<String, Integer> limits,
                                   final Map<String, List<String>> groups,
                                   final List<String> warnings) {
+        return compile(limits, groups, List.of(), warnings);
+    }
+
+    public static RuleSet compile(final Map<String, Integer> limits,
+                                  final Map<String, List<String>> groups,
+                                  final List<String> forbiddenTokens,
+                                  final List<String> warnings) {
         final List<Rule> sable = new ArrayList<>();
         final List<Rule> create = new ArrayList<>();
+        final Set<Block> forbiddenSable = new ObjectOpenHashSet<>();
+        final Set<Block> forbiddenCreate = new ObjectOpenHashSet<>();
         final Set<String> warnedTokens = new HashSet<>();
 
         for (final Map.Entry<String, Integer> entry : limits.entrySet()) {
@@ -92,7 +106,39 @@ public final class RuleSet {
             }
         }
 
-        return new RuleSet(sable, create);
+        for (final String rawEntry : forbiddenTokens) {
+            final String rawKey = rawEntry == null ? "" : rawEntry.trim();
+            if (rawKey.isEmpty()) {
+                continue;
+            }
+
+            Scope scope = Scope.SABLE;
+            String token = rawKey;
+            if (token.startsWith("*")) {
+                scope = Scope.BOTH;
+                token = token.substring(1).trim();
+            } else if (token.length() > 1
+                    && (token.charAt(0) == 'C' || token.charAt(0) == 'c')
+                    && Character.isWhitespace(token.charAt(1))) {
+                scope = Scope.CREATE;
+                token = token.substring(1).trim();
+            }
+
+            if (token.isEmpty()) {
+                warnings.add("forbiddenBlocks[" + rawKey + "]: пустое правило после префикса");
+                continue;
+            }
+
+            final Set<Block> blocks = resolveToken(token, groups, warnings, warnedTokens);
+            if (scope == Scope.SABLE || scope == Scope.BOTH) {
+                forbiddenSable.addAll(blocks);
+            }
+            if (scope == Scope.CREATE || scope == Scope.BOTH) {
+                forbiddenCreate.addAll(blocks);
+            }
+        }
+
+        return new RuleSet(sable, create, forbiddenSable, forbiddenCreate);
     }
 
     private static Set<Block> resolveToken(final String token,
@@ -251,6 +297,19 @@ public final class RuleSet {
         public String toString() {
             return this.display + " (" + this.scope + " <= " + this.limit + ", " + this.blocks.size() + " бл.)";
         }
+    }
+
+    public boolean isForbidden(final Block block, final Scope scope) {
+        if (block == null) {
+            return false;
+        }
+        if (scope == Scope.SABLE) {
+            return this.forbiddenSable.contains(block);
+        }
+        if (scope == Scope.CREATE) {
+            return this.forbiddenCreate.contains(block);
+        }
+        return this.forbiddenSable.contains(block) || this.forbiddenCreate.contains(block);
     }
 
     @Override

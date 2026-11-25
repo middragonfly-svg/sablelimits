@@ -199,6 +199,59 @@ public final class TestMod {
         final InteractionResult groupDenied = place(level, groupSub.getPlot().getCenterBlock().above());
         out.append("group denied=").append(groupDenied).append("; ");
 
+        // ---- Forbidden blocks: placement on a Sable structure ------------
+        final BlockPos forbiddenSupport = anchor.west();
+        final BlockPos forbiddenPlacePos = forbiddenSupport.above();
+        level.setBlockAndUpdate(forbiddenSupport, Blocks.STONE.defaultBlockState());
+
+        writeJson("{\"enabled\":true,\"forbiddenBlocks\":[\"minecraft:hopper\"],\"messages\":{}}");
+        ConfigManager.reload();
+        out.append("forbiddenPlace=").append(place(level, forbiddenPlacePos)).append("; ");
+
+        // A Create-only forbidden entry must not block Sable placement.
+        writeJson("{\"enabled\":true,\"forbiddenBlocks\":[\"C minecraft:hopper\"],\"messages\":{}}");
+        ConfigManager.reload();
+        out.append("sableUnaffectedByCreateForbidden=").append(place(level, forbiddenPlacePos)).append("; ");
+
+        // ---- Forbidden blocks: Sable assembly ----------------------------
+        writeJson("{\"enabled\":true,\"forbiddenBlocks\":[\"minecraft:slime_block\"],\"messages\":{}}");
+        ConfigManager.reload();
+        final BlockPos base6 = new BlockPos(300, 10, 200);
+        clear(level, base6, 4, 3, 4);
+        level.setBlockAndUpdate(base6, Blocks.SLIME_BLOCK.defaultBlockState());
+        level.setBlockAndUpdate(base6.east(), Blocks.SLIME_BLOCK.defaultBlockState());
+        level.setBlockAndUpdate(base6.east(2), Blocks.SLIME_BLOCK.defaultBlockState());
+        boolean forbiddenAssembly = false;
+        try {
+            SimAssemblyHelper.assembleFromSingleBlock(level, base6, base6.east(2), false, true);
+        } catch (final AssemblyException e) {
+            forbiddenAssembly = true;
+            out.append("forbiddenAssemblyMessage=").append(e.component.getString()).append("; ");
+        }
+        out.append("forbiddenAssembly=").append(forbiddenAssembly).append("; ");
+
+        // ---- Forbidden blocks: Create assembly ---------------------------
+        writeJson("{\"enabled\":true,\"forbiddenBlocks\":[\"C minecraft:slime_block\"],\"messages\":{}}");
+        ConfigManager.reload();
+        boolean createForbidden = false;
+        try {
+            new TestContraption().searchMovedStructure(level, base3, Direction.UP);
+        } catch (final AssemblyException e) {
+            createForbidden = true;
+        }
+        out.append("createForbidden=").append(createForbidden).append("; ");
+
+        // A Sable-only forbidden entry must not cancel a Create contraption.
+        writeJson("{\"enabled\":true,\"forbiddenBlocks\":[\"minecraft:slime_block\"],\"messages\":{}}");
+        ConfigManager.reload();
+        boolean createForbiddenScoped = true;
+        try {
+            new TestContraption().searchMovedStructure(level, base3, Direction.UP);
+        } catch (final AssemblyException e) {
+            createForbiddenScoped = false;
+        }
+        out.append("createUnaffectedBySableForbidden=").append(createForbiddenScoped).append("; ");
+
         out.append("cache entries=").append(LimitManager.get() == null ? -1
                 : LimitManager.get().cachedStructures()).append("; done");
     }

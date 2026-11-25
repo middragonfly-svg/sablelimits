@@ -8,6 +8,8 @@
     "  #create:seats            — лимит по тегу блока",
     "  group:engines            — лимит по группе из секции groups",
     "Значение 0 или меньше отключает конкретное правило.",
+    "forbiddenBlocks — блоки, с которыми сборка отменяется: ID, #тег или group:имя.",
+    "  в forbiddenBlocks те же префиксы: без префикса — Sable, C — Create, * — оба типа.",
     "defaultMaxBlocks — общий лимит блоков на Sable-структуру (0 = без лимита).",
     "cacheExpirationDays — сколько дней хранить запись кэша (0 = никогда не удалять).",
     "assemblyUsesPlayerLimit — при сборке учитывать личный limit.size ближайшего игрока (иначе только defaultMaxBlocks).",
@@ -47,11 +49,13 @@
       "simulated:black_portable_engine"
     ]
   },
+  "forbiddenBlocks": [],
   "messages": {
     "blockLimit": "&cЛимит: &f%block% &7(%current%/%limit%)",
     "sizeLimit": "&cЛимит размера корабля: &f%current%/%limit% &7блоков",
     "assemblyBlockLimit": "&cСборка отменена: &f%block% &7(%current%/%limit%)",
     "assemblySizeLimit": "&cСборка отменена: &f%current%&7/&f%limit% &7блоков (максимум)",
+    "forbiddenBlock": "&cБлок запрещён на конструкции: &f%block%",
     "reloaded": "&aSableLimits: конфиг перезагружен, правил: &f%rules%&a."
   }
 }

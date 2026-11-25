@@ -161,6 +161,9 @@ public final class LimitManager {
 
         final boolean bypassBlocks = player != null && Permissions.bypassBlocks(player);
         if (!bypassBlocks) {
+            if (config.rules.isForbidden(newBlock, RuleSet.Scope.SABLE)) {
+                return forbiddenMessage(newBlock);
+            }
             for (final RuleSet.Rule rule : config.rules.sableRules) {
                 if (!rule.matches(newBlock) && !rule.matches(oldBlock)) {
                     continue;
@@ -205,6 +208,22 @@ public final class LimitManager {
                 "limit", Integer.toString(limit),
                 "total", Integer.toString(after)
         ));
+    }
+
+    private static Component forbiddenMessage(final Block block) {
+        final SableLimitsConfig config = ConfigManager.get();
+        return Notifier.component(config.messages.forbiddenBlock, Map.of(
+                "block", blockId(block)
+        ));
+    }
+
+    private static String blockId(final Block block) {
+        if (block == null) {
+            return "?";
+        }
+        final net.minecraft.resources.ResourceLocation id =
+                net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(block);
+        return id == null ? block.toString() : id.toString();
     }
 
     // ------------------------------------------------------------------
@@ -283,6 +302,13 @@ public final class LimitManager {
         final boolean bypassSize = actor != null && Permissions.bypassSize(actor);
 
         if (!bypassBlocks) {
+            for (final Block block : counts.byBlock().keySet()) {
+                if (config.rules.isForbidden(block, RuleSet.Scope.SABLE)) {
+                    final Component message = forbiddenMessage(block);
+                    Notifier.notifyAssembly(level, anchor, message);
+                    throw new AssemblyException(message);
+                }
+            }
             for (final RuleSet.Rule rule : config.rules.sableRules) {
                 final int after = Counting.countMatching(rule, counts.byBlock());
                 if (after > rule.limit) {
@@ -324,7 +350,7 @@ public final class LimitManager {
         if (!config.enabled || !(level instanceof final ServerLevel serverLevel)) {
             return;
         }
-        if (config.rules.createRules.isEmpty()) {
+        if (config.rules.createRules.isEmpty() && config.rules.forbiddenCreate.isEmpty()) {
             return;
         }
 
@@ -338,11 +364,20 @@ public final class LimitManager {
         final BlockPos origin = anchor != null ? anchor : contraption.anchor;
         final ServerPlayer actor = origin == null ? null
                 : Notifier.findNearestPlayer(serverLevel, origin, config.assemblyActorRadius);
-        if (actor != null && Permissions.bypassBlocks(actor)) {
+        final boolean bypassBlocks = actor != null && Permissions.bypassBlocks(actor);
+        if (bypassBlocks) {
             return;
         }
 
         final BlockPos messagePos = origin != null ? origin : BlockPos.ZERO;
+        for (final Block block : counts.byBlock().keySet()) {
+            if (config.rules.isForbidden(block, RuleSet.Scope.CREATE)) {
+                final Component message = forbiddenMessage(block);
+                Notifier.notifyAssembly(serverLevel, messagePos, message);
+                throw new AssemblyException(message);
+            }
+        }
+
         for (final RuleSet.Rule rule : config.rules.createRules) {
             final int after = Counting.countMatching(rule, counts.byBlock());
             if (after > rule.limit) {
