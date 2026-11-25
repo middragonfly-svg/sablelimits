@@ -49,7 +49,14 @@ public final class Notifier {
 
     public static void notifyAssembly(final ServerLevel level, final BlockPos anchor, final Component message) {
         final int radius = Math.max(0, ConfigManager.get().assemblyActorRadius);
+        final int cooldown = ConfigManager.get().messageCooldownTicks;
+        final long now = level.getGameTime();
         for (final ServerPlayer player : nearbyPlayers(level, anchor, radius)) {
+            final Long last = LAST_MESSAGE.get(player.getUUID());
+            if (last != null && cooldown > 0 && now - last < cooldown) {
+                continue;
+            }
+            LAST_MESSAGE.put(player.getUUID(), now);
             player.sendSystemMessage(message);
         }
     }
